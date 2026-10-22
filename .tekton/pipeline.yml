@@ -53,6 +53,7 @@ spec:
           workspace: pipeline-workspace
       taskRef:
         name: buildah
+        kind: ClusterTask
       params:
         - name: IMAGE
           value: "image-registry.openshift-image-registry.svc:5000/$(context.pipelineRun.namespace)/counter:latest"
@@ -64,4 +65,5 @@ spec:
         - name: SCRIPT
           value: oc new-app counter:latest || oc rollout restart deployment/counter
       runAfter: [buildah]
+
 
