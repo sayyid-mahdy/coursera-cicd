@@ -16,7 +16,7 @@ spec:
           workspace: pipeline-workspace
       taskRef:
         name: cleanup
-    - name: clone
+    - name: git-clone
       workspaces:
         - name: output
           workspace: pipeline-workspace
@@ -28,7 +28,7 @@ spec:
         - name: revision
           value: $(params.branch)
       runAfter: [cleanup]
-    - name: lint
+    - name: flake8
       workspaces:
         - name: source
           workspace: pipeline-workspace
@@ -39,15 +39,15 @@ spec:
           value: "python:3.9-slim"
         - name: args
           value: ["--count", "--max-complexity=10", "--max-line-length=127", "--statistics"]
-      runAfter: [clone]
-    - name: tests
+      runAfter: [git-clone]
+    - name: nose
       workspaces:
         - name: source
           workspace: pipeline-workspace
       taskRef:
         name: nose
-      runAfter: [clone]
-    - name: build
+      runAfter: [git-clone]
+    - name: buildah
       workspaces:
         - name: source
           workspace: pipeline-workspace
@@ -56,11 +56,12 @@ spec:
       params:
         - name: IMAGE
           value: "image-registry.openshift-image-registry.svc:5000/$(context.pipelineRun.namespace)/counter:latest"
-      runAfter: [tests, lint]
+      runAfter: [nose, flake8]
     - name: deploy
       taskRef:
         name: openshift-client
       params:
         - name: SCRIPT
           value: oc new-app counter:latest || oc rollout restart deployment/counter
-      runAfter: [build]
+      runAfter: [buildah]
+
